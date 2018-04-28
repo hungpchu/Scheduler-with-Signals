@@ -1,0 +1,86 @@
+NAME: HUNG CHU
+NUID: 95060612
+
+## 1 Compile, Run, and Test program:
+
+### 1.1 Compile and Run
+
+
+	a/ To run the program with your own test:
+
+make
+./scheduler 3 2 3 2 3
+
+	  a/ To run the program with your own test:
+ 
+make
+./scheduler -test -f0 rr
+
+
+
+## 2 Questions:
+
+Question 1. Why do we block SIGUSR2 and SIGALRM in worker.c? Why do we unblock SIGUSR1 and SIGTERM in worker.c?
+
+Answer: 
+
+	In worker.c, we block SIGUSR2 and SIGALRM in thestart_worker, which will be used in the create_worker function in the scheduler.c
+	
+	We have to unblock the SIGUSR1 and SIGTERM sincethese 2 signal will be used to cancel and suspend threads,which has been created with pthread_create but will need to wait for scheduler to schedule.
+	
+	We have to block SIGUSR2 and SIGALRM since these signal will resume thread and indicate time pass for thread. But in create_worker, we just create thread and wait for scheduler to schedule so there will be no need to resume thread and indicate its run time.
+ 
+
+Question 2. We use sigwait() and sigaction() in our code. Explain the difference between the two. (Please explain from the aspect of thread behavior rather than syntax).
+
+Answer:
+
+	1/ sigwait() will block the signal SIGUSR1 until it receives a resume (SIGUSR2) signal.
+	
+	2/ sigaction() will install signal handlers for SIGALRM, SIGUSR1, and SIGTERM instead of blocking signal until receving resume signal like sigwait().
+
+Question 3. When we use POSIX:TMR interval timer, we are using relative time. What is the alternative? Explain the difference between the two.
+
+Answer:  Relative time is similar to the scheme used by POSIX:XSI timers, whereas alternative time allows for greater accuracy and control of timer drift. 
+
+Question 4. Look at start_worker() in worker.c, a worker thread is executing within an infinite loop at the end. When does a worker thread terminate?
+
+Asnwer: a worker thread terminate when its quanta <= 0
+
+Question 5. When does the scheduler finish? Why does it not exit when the scheduler queue is empty?
+
+Answer: The scheduler finish when all the thread has been run until their quantas = 0. It can not exit even whenthe queue is empty since there still may be thread needed to be run
+
+Question 6. After a thread is scheduled to run, is it still in the sched_queue? When is it removed from the head of the queue? When is it removed from the queue completely?
+
+Asnwer: 
+
+	After a thread is scheduled to run, is will still be in the sched_queue but it will be suspended for other threads to be run. 
+
+	It will be removed from the head of the queue when it get suspended.
+
+	It will be removed from the queue completely when quanta of it <= 0.
+
+Question 7. What's the purpose of the global variable "completed" in scheduler.c? Why do we compare "completed" with thread_count before we wait_for_queue() in next_worker()?
+
+Answer:
+
+	the purpose of the global variable "completed" is to be used in 2 function next_worker and create_worker
+
+	we compare "completed" with thread_count since complete will only be equal or great then thread_count when all the thread has been served. Then we can be done> Else we will keep serving threads until all threads has been served.
+
+Question 8. We only implemented Round Robin in this PA. If we want to implement a FIFO scheduling algorithm and keep the modification as minimum, which function in scheduler.c is the one that you should modify? Briefly describe how you would modify this function.
+
+Answer:
+
+	If we want to implement a FIFO scheduling algorithm and keep the modification as minimum, i will modify the function timer_handler(). Since FIFO scheduling will be nonpreemptive so the thread come first will get in the queue and run til finish.
+
+	Then in the timer_handler() we will suspend the currentThread only it finish all of the its quanta. Thenterminate it. After that, move to the next thread and soon.
+
+Question 9. In this implementation, the scheduler only changes threads when the time quantum expires.Briefly explain how you would use an additional signal to allow the scheduler to change threads in the middle of a time quantum. In what situations would this be useful? 
+
+Answer: 
+
+	In this implementation, the time quantum = 1 second. Thus, the middle of time quantum = 0.5 second 	
+
+	
